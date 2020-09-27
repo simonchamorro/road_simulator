@@ -19,6 +19,11 @@ With the model created in `example/model_cnn.py` and a dataset of 100,000 images
 
 ## Getting started
 
+To install torch (Optional: to use the torch models)
+```bash
+$ conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
+```
+
 To install the library, do in the root folder:
 ```bash
 $ pip install .

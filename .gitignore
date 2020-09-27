@@ -4,7 +4,9 @@
 *.coverage
 
 *.hdf5
+*.pth
 
+data/
 dataset/
 notebooks/
 

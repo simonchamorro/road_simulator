@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: roadsimulator
+Version: 0.1
+Summary: Easy-to-use road simulator for little self-driving cars
+Home-page: https://github.com/vinzeebreak/road_simulator
+Author: Ironcar Team
+Author-email: vincenthoulbreque+ironcar@gmail.com
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN
+Provides-Extra: tests

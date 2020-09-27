@@ -1,33 +1,9 @@
 import os
-import torch
 import numpy as np
 
 from tqdm import tqdm
 from scipy.misc import imread
-from torch.utils.data import Dataset, DataLoader
-from sklearn.model_selection import train_test_split
 
-
-def get_device():
-    if torch.cuda.is_available():  
-      dev = "cuda:0" 
-    else:  
-      dev = "cpu"  
-    device = torch.device(dev)
-
-class ImgDataset(Dataset):
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        
-    def __len__(self):
-        return len(self.y)
-    
-    def __getitem__(self, idx):
-        x = np.swapaxes(self.x[idx], 0, 1)
-        x = np.swapaxes(x, 0, 2)
-        y = self.y[idx].index(1)
-        return torch.from_numpy(x.astype(np.float32)), y
 
 def get_images(paths, n_images=1000):
 
@@ -49,16 +25,14 @@ def get_images(paths, n_images=1000):
                 itc = image_file[:-4].split('_')
                 lbl = [float(itc[3]), float(itc[5])]
                 if img is not None:
-                    # Normalize
-                    images.append(img[:, :].astype('float32') / 255.)
+                    images.append(img[:, :])
                     labels.append(lbl)
                     n += 1
             except Exception as e:
                 pass
-    
-    # np arrays dont fit in memory for large datasets
-    # images = np.array(images)
-    # labels = np.array(labels)
+
+    images = np.array(images)
+    labels = np.array(labels)
 
     return images, labels
 
@@ -91,7 +65,8 @@ def from_continue_to_discrete(Y):
                 ns[i] += 1
                 break
 
-    return Y_new, ns
+    Y = np.array(Y_new)
+    return Y, ns
 
 
 def equilibrate_dataset(X, Y, ns):
@@ -116,10 +91,10 @@ def equilibrate_dataset(X, Y, ns):
         all_X.extend(x)
         all_Y.extend(y)
 
-    return all_X, all_Y
+    return np.array(all_X), np.array(all_Y)
 
 
-def get_datasets(paths, n_images, seed=0, batch_size=100):
+def get_datasets(paths, n_images):
 
     X, Y = get_images(paths, n_images=n_images)
 
@@ -127,16 +102,21 @@ def get_datasets(paths, n_images, seed=0, batch_size=100):
     # sigmoid
     Y, ns = from_continue_to_discrete(Y)
 
-    # Equilibrate the dataset 
-    # TODO fix this for memory efficiency 
-    # for now it breaks on big datasets
-    # X, Y = equilibrate_dataset(X, Y, ns)
+    # Equilibrate the dataset between all the possible directions
+    X, Y = equilibrate_dataset(X, Y, ns)
 
-    x_train, x_valid, y_train, y_valid = train_test_split(X, Y, test_size=0.2, \
-                                                          stratify=Y, random_state=seed)
-    train_ds = ImgDataset(x_train, y_train)
-    valid_ds = ImgDataset(x_valid, y_valid)
-    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-    val_dl = DataLoader(valid_ds, batch_size=batch_size)
+    # Shuffle everything
+    X, Y = shuffle_data(X, Y)
 
-    return train_dl, val_dl
+    # Normalization of the input data (between 0 and 1)
+    X = X.astype('float32') / 255.
+
+    # Split between train, val and test
+    test_cutoff = int(len(X) * .8) # 80% of data used for training
+    val_cutoff = test_cutoff + int(len(X) * .1) # 10% of data used for validation and 10% for test data
+
+    train_X, train_Y = X[:test_cutoff], Y[:test_cutoff]
+    val_X, val_Y = X[test_cutoff:val_cutoff], Y[test_cutoff:val_cutoff]
+    test_X, test_Y = X[val_cutoff:], Y[val_cutoff:]
+
+    return train_X, train_Y, val_X, val_Y, test_X, test_Y
