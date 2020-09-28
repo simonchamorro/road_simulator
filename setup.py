@@ -11,10 +11,12 @@ setup(name='roadsimulator',
       install_requires=[
           'Pillow==5.1.0',
           'tqdm==4.23.2',
-          'numpy==1.14.2',
+          'numpy',
           'Cython==0.29.21',
           'opencv-python==4.4.0.42',
-          'pandas==1.1.2'
+          'pandas==1.1.2',
+          'sklearn',
+          'scipy'
       ],
       extras_require={
           'tests': ['nose==1.3.7'],
